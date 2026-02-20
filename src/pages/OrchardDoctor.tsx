@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Stethoscope, Video, Phone, MessageSquare, MapPin, Plus, Trash2,
   CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Send, FileText,
@@ -9,6 +9,7 @@ import {
 
 import { useOrchardDoctor } from '../hooks/useOrchardDoctor';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 import type {
   ConsultType, ConsultStatus, PrescriptionStatus, ActionCategory,
   DigitalPrescription, ConsultationRequest, ActionItem,
@@ -546,13 +547,8 @@ interface OrchardDoctorProps {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MASTER DATA FIELDS (fallback for fieldId and orchardName if not provided as props)
+   MASTER DATA FIELDS (fallback for orchardName only — fieldId must be a real UUID from DB)
 ═══════════════════════════════════════════════════════════════════════════ */
-
-const FIELDS = [
-  { id: 'FIELD001', name: 'Demo Orchard 1' },
-  { id: 'FIELD002', name: 'Demo Orchard 2' },
-];
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -565,19 +561,43 @@ export default function OrchardDoctor({
   orchardName: propOrchardName,
   onExpenseLog,
 }: OrchardDoctorProps) {
-  // Fallback to master data if props are missing
-  const fieldId = propFieldId || (FIELDS.length > 0 ? FIELDS[0].id : '');
-  const orchardName = propOrchardName || (FIELDS.length > 0 ? FIELDS[0].name : '');
-
   /* ── Auth ── */
   const { user } = useAuth();
   const userId = user?.id ?? '';
   const resolvedGrowerName  = growerName  || (user as any)?.name  || '';
   const resolvedGrowerPhone = growerPhone || (user as any)?.phone || '';
 
+  /* ── Field selector state (used when fieldId is not passed as a prop) ── */
+  const [userFields, setUserFields] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedFieldId, setSelectedFieldId] = useState<string>(propFieldId ?? '');
+  const [selectedFieldName, setSelectedFieldName] = useState<string>(propOrchardName ?? '');
+  const [fieldsLoading, setFieldsLoading] = useState(!propFieldId);
+
+  // When no fieldId prop is provided, fetch the user's fields from Supabase
+  useEffect(() => {
+    if (propFieldId || !userId) return;
+    setFieldsLoading(true);
+    supabase
+      .from('fields')
+      .select('id, name')
+      .eq('user_id', userId)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<{ id: string; name: string }>;
+        setUserFields(rows);
+        if (rows.length > 0) {
+          setSelectedFieldId(rows[0].id);
+          setSelectedFieldName(rows[0].name);
+        }
+        setFieldsLoading(false);
+      });
+  }, [userId, propFieldId]);
+
+  // Resolved values — prop takes priority, otherwise use selector state
+  const fieldId    = propFieldId    ?? selectedFieldId;
+  const orchardName = propOrchardName ?? selectedFieldName;
+
   // All hooks called unconditionally BEFORE any early return (React rules of hooks).
-  // Pass empty string fallback; the hook's reload() guards with `if (!fieldId) return`.
-  const db = useOrchardDoctor(fieldId ?? '', userId, resolvedGrowerName, resolvedGrowerPhone);
+  const db = useOrchardDoctor(fieldId, userId, resolvedGrowerName, resolvedGrowerPhone);
 
   /* ── Local UI state ── */
   const [portalMode, setPortalMode] = useState<'grower' | 'doctor'>('grower');
@@ -592,15 +612,6 @@ export default function OrchardDoctor({
   const [whatsAppRx, setWhatsAppRx] = useState<DigitalPrescription | null>(null);
   const [activeDoctorId, setActiveDoctorId] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
-
-  // Guard: fieldId is required to render; orchardName is optional
-  if (!fieldId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50 text-red-700 text-lg font-bold">
-        Error: No orchard selected. Please select an orchard before requesting a consultation.
-      </div>
-    );
-  }
 
   /* ── Dismiss combined error ── */
   const errorMsg = db.error || localError;
@@ -693,6 +704,32 @@ export default function OrchardDoctor({
               <p className="text-slate-400 text-xs mt-0.5">
                 Telehealth & Agronomist Dispatch · Grower: {growerName}
               </p>
+              {/* Field selector — shown only when fieldId is not injected as a prop */}
+              {!propFieldId && (
+                <div className="mt-2 flex items-center gap-2">
+                  {fieldsLoading ? (
+                    <span className="text-slate-400 text-xs flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Loading orchards…
+                    </span>
+                  ) : userFields.length === 0 ? (
+                    <span className="text-red-400 text-xs">No orchards found. Please create a field first.</span>
+                  ) : (
+                    <select
+                      value={selectedFieldId}
+                      onChange={e => {
+                        const chosen = userFields.find(f => f.id === e.target.value);
+                        setSelectedFieldId(e.target.value);
+                        setSelectedFieldName(chosen?.name ?? '');
+                      }}
+                      className="bg-white/10 border border-white/20 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40"
+                    >
+                      {userFields.map(f => (
+                        <option key={f.id} value={f.id} className="text-slate-900 bg-white">{f.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -794,15 +831,31 @@ export default function OrchardDoctor({
           <ErrorBanner message={errorMsg} onDismiss={dismissError} />
         )}
 
+        {/* Field-fetch loading skeleton */}
+        {fieldsLoading && (
+          <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Loading your orchards…</span>
+          </div>
+        )}
+
+        {/* No orchard available after loading */}
+        {!fieldsLoading && !fieldId && (
+          <div className="text-center py-16 text-gray-500">
+            <Stethoscope className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="text-sm font-medium">No orchard found. Please create an orchard in the Fields page first.</p>
+          </div>
+        )}
+
         {/* Global loading skeleton */}
-        {db.loading && (
+        {!fieldsLoading && fieldId && db.loading && (
           <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Loading from Supabase...</span>
           </div>
         )}
 
-        {!db.loading && (
+        {!fieldsLoading && fieldId && !db.loading && (
           <>
             {/* ═══ GROWER — REQUEST CONSULTATION ══════════════════════════ */}
             {portalMode === 'grower' && tab === 'consult' && (

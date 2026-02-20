@@ -83,7 +83,7 @@ const db = supabase as any;
  *      Now correctly filters by field_id and user_id per the SQL schema.
  */
 export async function fetchConsultations(fieldId: string, userId: string): Promise<ConsultationRequest[]> {
-  const { data, error } = await db
+  let query = db
     .from('consultations')
     .select(`
       *,
@@ -92,9 +92,15 @@ export async function fetchConsultations(fieldId: string, userId: string): Promi
         prescription_action_items (*)
       )
     `)
-    .eq('field_id', fieldId)   // â† was .eq('orchard_id', orchardId) â€” FIXED
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
+
+  // Only filter by field_id when a real UUID is provided
+  if (fieldId) {
+    query = query.eq('field_id', fieldId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`fetchConsultations: ${error.message}`);
   return ((data ?? []) as any[]).map(mapConsultRow);
@@ -123,7 +129,7 @@ export async function createConsultation(payload: {
       user_id: payload.userId,         // â† required for RLS USING (auth.uid() = user_id)
       grower_name: payload.growerName,
       grower_phone: payload.growerPhone,
-      field_id: payload.fieldId,       // â† was orchard_id: payload.orchardId â€” FIXED
+      ...(payload.fieldId ? { field_id: payload.fieldId } : {}),
       orchard_name: payload.orchardName,
       doctor_id: payload.doctorId,
       type: payload.type,
