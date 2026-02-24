@@ -1,0 +1,28 @@
+name: The Applekul One Robot (CEO Guard)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  inspect-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Catch the Code
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Setup Node.js (The Engine)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install Developer Packages
+        run: npm ci
+
+      - name: 🧹 Check for Messy Code (Linting)
+        run: npm run lint
+
+      - name: 🏗️ Build Test (Will it crash the app?)
+        run: npm run build
