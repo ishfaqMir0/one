@@ -219,11 +219,11 @@ const Login: React.FC = () => {
                 <img src="/logo.png" alt="AppleKul™"  className="w-24 h-24 rounded-xl object-contain mx-auto" />
               </div>
               <div className="lg-fade-down lg-d0 text-lg font-extrabold tracking-wide mb-3" style={{ color: '#5a7a3a', fontFamily: 'Georgia, serif' }}>
-                AppleKul™ Suite
+                AppleKul One
               </div>
 
               <h1 className="lg-fade-up lg-d1 text-3xl font-extrabold text-gray-900 tracking-tight">
-                <span className="lg-leaf">🌿</span> Welcome Back
+                <span className="lg-leaf"></span> Welcome Back
               </h1>
               <p className="lg-fade-up lg-d2 text-sm text-emerald-700 mt-1.5 font-semibold">Sign in to manage your orchard</p>
             </div>
@@ -297,7 +297,7 @@ const Login: React.FC = () => {
                 <Link to="/signup" className="text-emerald-600 hover:text-emerald-800 font-bold transition-colors underline underline-offset-2">Sign Up</Link>
               </p>
               <p className="text-xs text-gray-400 font-medium">
-                Doctors are redirected to the Orchard Hospital portal automatically.
+                © 2026 AppleKul™. All rights reserved.
               </p>
             </div>
           </div>
