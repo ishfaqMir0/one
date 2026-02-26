@@ -11,6 +11,8 @@ import {
   FlaskConical,
   Search,
   Satellite,
+  CalendarIcon,
+  TreePine,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -142,12 +144,13 @@ const SIDEBAR_STYLES = `
 
 const menuItems = [
   { path: '/dashboard',          icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/fields',             icon: MapPin,           label: 'Fields' },
-  { path: '/finance',            icon: IndianRupee,      label: 'Financial Ledger' },
-  { path: '/orchard-doctor',     icon: Stethoscope,      label: 'Orchard Doctor' },
-  { path: '/skuast-advisory',    icon: BookOpen,         label: 'SKUAST Advisory' },
-  { path: '/soil-test-advisory', icon: FlaskConical,     label: 'Soil Test Advisory' },
-  { path: '/tree-scouting',      icon: Search,           label: 'Tree Scouting' },
+  { path: '/fields',             icon: MapPin,           label: 'Orchard' },
+  { path: '/calendar',           icon: CalendarIcon,     label: 'Calendar' },
+  { path: '/tree-scouting',      icon: TreePine,           label: 'Tree Scouting' },
+  { path: '/finance',            icon: IndianRupee,      label: 'Finance' },
+  
+  
+  
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
@@ -179,15 +182,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         role="navigation"
         aria-label="Main navigation"
       >
-        {/* Desktop logo (hidden on mobile — Navbar shows it there) */}
+      {/* Desktop logo (hidden on mobile — Navbar shows it there) 
         <div className="sb-logo">
           <img
             src="/logo.png"
             alt="AppleKul Logo"
             className="w-10 h-10 object-contain flex-shrink-0"
           />
-          <span className="text-base font-bold text-gray-900 leading-tight">AppleKul™</span>
-        </div>
+          <span className="text-base font-bold text-gray-900 leading-tight">AppleKul One</span>
+        </div> */}
 
         {/* Mobile header row */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 lg:hidden">
@@ -248,3 +251,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
+{/* { path: '/fields',             icon: MapPin,           label: 'Fields' },
+  { path: '/finance',            icon: IndianRupee,      label: 'Finance' },
+  { path: '/orchard-doctor',     icon: Stethoscope,      label: 'Orchard Doctor' },
+  { path: '/skuast-advisory',    icon: BookOpen,         label: 'SKUAST Advisory' },
+  { path: '/soil-test-advisory', icon: FlaskConical,     label: 'Lab-Test' }, */}
