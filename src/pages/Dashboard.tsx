@@ -201,6 +201,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const mapRef = useRef<HTMLDivElement>(null);
   const taggedTreesSectionRef = useRef<HTMLDivElement>(null);
+  const weatherForecastRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const boundaryPolygonsRef = useRef<Map<string, any>>(new Map());
   const treeMarkersRef = useRef<any[]>([]);
@@ -790,7 +791,7 @@ const Dashboard: React.FC = () => {
     { title: 'Total Fields', value: fields.length,            icon: '🌿', color: 'from-emerald-500 to-green-400',  delay: ' ', onClick: () => navigate('/fields') },
     { title: 'Total Trees',  value: totalTrees,                icon: '🌳', color: 'from-teal-500 to-emerald-400',  delay: ' ', onClick: () => taggedTreesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
     { title: 'Active Alerts',value: scoutingAlerts.length,     icon: '⚠️', color: 'from-orange-400 to-amber-400',  delay: ' ', onClick: () => navigate('/tree-scouting') },
-    { title: 'Temperature',  value: weatherLoading ? '…' : (weather ? `${weather.temperature}°C` : (weatherError || 'N/A')), icon: '🌡️', color: 'from-violet-500 to-purple-400', delay: ' ', onClick: undefined },
+    { title: 'Temperature',  value: weatherLoading ? '…' : (weather ? `${weather.temperature}°C` : (weatherError || 'N/A')), icon: '🌡️', color: 'from-violet-500 to-purple-400', delay: ' ', onClick: () => weatherForecastRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
   ];
 
   const ragColor = {
@@ -856,7 +857,10 @@ const Dashboard: React.FC = () => {
             </p>
 
             {weather && (
-              <div className="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-xl sm:rounded-2xl text-white text-xs sm:text-sm font-semibold">
+              <div
+                onClick={() => weatherForecastRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-white/15 backdrop-blur-sm border border-white/25 rounded-xl sm:rounded-2xl text-white text-xs sm:text-sm font-semibold cursor-pointer hover:bg-white/25 transition-colors"
+              >
                 <span className="text-xl sm:text-2xl">{getAnimatedIcon(weather.weathercode)}</span>
                 <span>{weather.temperature}°C</span>
                 <span className="w-px h-4 bg-white/30" />
@@ -1183,7 +1187,7 @@ const Dashboard: React.FC = () => {
         )}
 
         {forecast.length > 0 && (
-          <div className="dash-glass-card rounded-2xl p-4 sm:p-5 md:p-6">
+          <div ref={weatherForecastRef} className="dash-glass-card rounded-2xl p-4 sm:p-5 md:p-6">
             <div className="flex flex-col items-center text-center mb-4 sm:mb-5 md:mb-6 gap-2">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-400 flex items-center justify-center shadow-md">
                 <span className="text-xl sm:text-2xl">🌤️</span>
@@ -1543,9 +1547,9 @@ const Dashboard: React.FC = () => {
         {/* ══════════════════════════════════════════
             RECENT ACTIVITY
         ══════════════════════════════════════════ */}
-        <div className="dash-glass-card rounded-2xl p-4 sm:p-5 md:p-6">
+        <div className="dash-glass-card rounded-2xl p-4 sm:p-5 md:p-6 cursor-pointer" onClick={() => navigate('/calendar')}>
           <div className="flex flex-col items-center text-center mb-4 sm:mb-5 md:mb-6 gap-1">
-           
+
             <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-gray-900 mt-1 sm:mt-2">Recent Activity</h3>
           </div>
 

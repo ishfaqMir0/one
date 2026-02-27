@@ -563,6 +563,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
   const [showForm, setShowForm]               = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [showSkuast, setShowSkuast]           = useState(false);
+  const [filterStatus, setFilterStatus]       = useState<'all' | 'pending' | 'done'>('all');
 
   const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -746,14 +747,36 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
             </p>
 
             <div className="flex flex-wrap gap-1 mt-1 justify-center">
-              <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm border border-white/25 rounded-md px-2 py-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending');
+                  setSelectedDate(null);
+                }}
+                className={`flex items-center gap-1 backdrop-blur-sm border rounded-md px-2 py-0.5 transition-all ${
+                  filterStatus === 'pending'
+                    ? 'bg-amber-500/80 border-amber-300'
+                    : 'bg-white/20 border-white/25 hover:bg-white/30'
+                }`}
+              >
                 <Clock className="w-3 h-3 text-amber-300" />
                 <span className="text-white text-[10px] font-bold">{pendingCount} Pending</span>
-              </div>
-              <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm border border-white/25 rounded-md px-2 py-0.5">
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilterStatus(filterStatus === 'done' ? 'all' : 'done');
+                  setSelectedDate(null);
+                }}
+                className={`flex items-center gap-1 backdrop-blur-sm border rounded-md px-2 py-0.5 transition-all ${
+                  filterStatus === 'done'
+                    ? 'bg-emerald-500/80 border-emerald-300'
+                    : 'bg-white/20 border-white/25 hover:bg-white/30'
+                }`}
+              >
                 <CheckCircle2 className="w-3 h-3 text-emerald-300" />
                 <span className="text-white text-[10px] font-bold">{completedCount} Done</span>
-              </div>
+              </button>
               <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm border border-white/25 rounded-md px-2 py-0.5">
                 <CalendarIcon className="w-3 h-3 text-sky-300" />
                 <span className="text-white text-[10px] font-bold">{monthActivities.length} This Month</span>
@@ -935,7 +958,127 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
             {/* ── Right panel ── */}
             <div className="lg:col-span-1 space-y-4">
 
-              {selectedDate ? (
+              {filterStatus !== 'all' ? (
+                (() => {
+                  const filteredActivities = monthActivities
+                    .filter(a => filterStatus === 'pending' ? !a.completed : a.completed)
+                    .sort((a, b) => b.date.localeCompare(a.date));
+
+                  return (
+                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-green-700 to-emerald-600">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                            {filterStatus === 'pending' ? (
+                              <Clock className="w-5 h-5 text-white" />
+                            ) : (
+                              <CheckCircle2 className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest">
+                              {filterStatus === 'pending' ? 'Pending' : 'Completed'} Activities
+                            </p>
+                            <h3 className="text-sm font-extrabold text-white leading-snug">
+                              {MONTH_NAMES[month]} {year}
+                            </h3>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setFilterStatus('all')}
+                          className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                        >
+                          <X className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 space-y-2.5 max-h-[500px] overflow-y-auto thin-scroll">
+                        {filteredActivities.length === 0 ? (
+                          <div className="text-center py-10">
+                            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                              <CalendarIcon className="w-6 h-6 text-gray-300" />
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              No {filterStatus === 'pending' ? 'pending' : 'completed'} activities
+                            </p>
+                          </div>
+                        ) : (
+                          filteredActivities.map((act) => {
+                            const meta = ACTIVITY_TYPES[act.type];
+                            const Icon = meta.icon;
+                            const link = MODULE_LINKS[act.type];
+                            const d = new Date(act.date + 'T00:00:00');
+                            const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                            return (
+                              <div
+                                key={act.id}
+                                className={`activity-chip group rounded-xl border p-3.5 ${
+                                  act.completed
+                                    ? 'bg-gray-50 border-gray-200 opacity-70'
+                                    : `${meta.color} ${meta.borderColor}`
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={() => handleToggleComplete(act.id)}
+                                    className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                      act.completed ? 'bg-green-500 border-green-500' : `border-current ${meta.textColor}`
+                                    }`}
+                                  >
+                                    {act.completed && <div className="w-2 h-2 bg-white rounded-full" />}
+                                  </button>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                      <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.textColor}`} />
+                                      <span className={`text-[10px] font-bold uppercase tracking-wide ${meta.textColor}`}>{meta.label}</span>
+                                      <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                        {dateLabel}
+                                      </span>
+                                    </div>
+                                    <p className={`text-sm font-bold mt-0.5 ${act.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                      {act.title}
+                                    </p>
+                                    {act.notes && (
+                                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{act.notes}</p>
+                                    )}
+
+                                    {link && !act.completed && (
+                                      <button
+                                        onClick={() => handleOpenModule(link.module)}
+                                        className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold ${meta.textColor} hover:underline`}
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                        {link.label}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100">
+                                    <button
+                                      onClick={() => { setEditingActivity(act); setShowForm(true); }}
+                                      className={`p-1.5 rounded-lg hover:bg-black/5 ${meta.textColor}`}
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(act.id)}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : selectedDate ? (
                 <DayPanel
                   date={selectedDate}
                   activities={selectedActivities}

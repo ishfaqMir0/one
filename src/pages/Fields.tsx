@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { kml as kmlToGeoJSON } from '@tmcw/togeojson';
-import { Plus, Search, ListFilter as Filter, X } from 'lucide-react';
+import { Plus, Search, ListFilter as Filter, X, MoreVertical } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import type { Field } from '../types';
@@ -349,6 +349,7 @@ const Fields = () => {
   const [selectedTreeId, setSelectedTreeId]   = useState<string | null>(null);
   const [tagFormData, setTagFormData]         = useState({ name: '', variety: '', rowNumber: '' });
   const [editingTreeId, setEditingTreeId]     = useState<string | null>(null);
+  const [openDetailsMenuId, setOpenDetailsMenuId] = useState<string | null>(null);
 
   // All tree_tags from Supabase (keyed by field_id → list of tags)
   const [fieldTreeTags, setFieldTreeTags] = useState<Record<string, Array<{
@@ -1040,23 +1041,28 @@ const Fields = () => {
 
         {/* ══════════ STAT STRIP ══════════ */}
         {fields.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Total Fields',   value: fields.length,                         icon: '🗺️',  color: 'from-emerald-500 to-green-600' },
-              { label: 'Total Trees',    value: totalFieldTrees || '—',                icon: '🌳',  color: 'from-green-500 to-teal-500' },
-              { label: 'Total Area',     value: `${Number(totalFieldsArea).toFixed(1)} kanal`, icon: '📐', color: 'from-teal-500 to-cyan-500' },
-              { label: 'Filtered',       value: filteredFields.length,                 icon: '🔍',  color: 'from-sky-500 to-indigo-500' },
-            ].map((s, i) => (
-              <div key={i} className="fld-stat rounded-2xl p-4 shadow-sm flex items-center gap-3" style={{ animationDelay: `${i * 0.06}s` }}>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-lg font-extrabold text-gray-900 leading-none">{s.value}</p>
-                  <p className="text-xs font-semibold text-gray-400 mt-0.5">{s.label}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-center">
+            <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
+              {[
+                { label: 'Total Fields',   value: fields.length,                         icon: '🗺️',  color: 'from-emerald-500 to-green-600', onClick: () => navigate('/dashboard') },
+                { label: 'Total Trees',    value: totalFieldTrees || '—',                icon: '🌳',  color: 'from-green-500 to-teal-500', onClick: () => navigate('/dashboard') },
+              ].map((s, i) => (
+                <button
+                  key={i}
+                  onClick={s.onClick}
+                  className="fld-stat rounded-2xl p-5 shadow-sm flex items-center gap-4 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
+                  style={{ animationDelay: `${i * 0.06}s` }}
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl shadow-sm shrink-0`}>
+                    {s.icon}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-2xl font-extrabold text-gray-900 leading-none">{s.value}</p>
+                    <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wide">{s.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1109,56 +1115,121 @@ const Fields = () => {
                   {/* Card top accent line by health */}
                   <div className="h-1 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${getHealthDotColor(field.healthStatus)}, ${getHealthDotColor(field.healthStatus)}88)` }} />
 
-                  <div className="p-5">
+                  <div className="p-3">
                     {/* Header row */}
-                    <div className="flex items-start justify-between mb-3 gap-2">
+                    <div className="flex items-start justify-between mb-2 gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-extrabold text-gray-900 truncate">{field.name}</h3>
+                        <h3 className="text-sm font-extrabold text-gray-900 truncate">{field.name}</h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                          <span className="text-xs text-gray-400 truncate">{field.location}</span>
+                          <span className="text-[10px] text-gray-400 truncate">{field.location}</span>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${getHealthStatusBadge(field.healthStatus)}`}>
-                          <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ background: getHealthDotColor(field.healthStatus) }} />
-                          {field.healthStatus}
-                        </span>
-                        {orchardType && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
-                            {orchardType}
+                      <div className="flex items-start gap-1.5 shrink-0">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${getHealthStatusBadge(field.healthStatus)}`}>
+                            <span className="inline-block w-1 h-1 rounded-full mr-1 align-middle" style={{ background: getHealthDotColor(field.healthStatus) }} />
+                            {field.healthStatus}
                           </span>
-                        )}
+                          {orchardType && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
+                              {orchardType}
+                            </span>
+                          )}
+                        </div>
+                        {/* Three-dot menu */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDetailsMenuId(openDetailsMenuId === field.id ? null : field.id)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Field Details"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                          </button>
+                          {openDetailsMenuId === field.id && (
+                            <>
+                              {/* Backdrop to close menu */}
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setOpenDetailsMenuId(null)}
+                              />
+                              {/* Dropdown menu */}
+                              <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-20">
+                                <h4 className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-2 pb-2 border-b border-emerald-100">Field Details</h4>
+                                <div className="space-y-1.5">
+                                  {field.latitude && field.longitude && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Location:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                        {field.latitude.toFixed(6)}, {field.longitude.toFixed(6)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {(field as any).pincode && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">PIN:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{(field as any).pincode}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Soil:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">{field.soilType}</span>
+                                  </div>
+                                  {displayArea && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Area:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{displayArea} kanal</span>
+                                    </div>
+                                  )}
+                                  {totalRows > 0 && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Rows:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{totalRows} rows</span>
+                                    </div>
+                                  )}
+                                  {totalTrees > 0 && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Trees:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{totalTrees} trees</span>
+                                    </div>
+                                  )}
+                                  {orchardType && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Type:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{orchardType}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Good For:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                      {details.goodFor || 'Commercial Farming'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Density:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                      {totalTrees && displayArea ?
+                                        `${(totalTrees / Number(displayArea)).toFixed(1)} trees/kanal` :
+                                        details.plantDensity || 'High Density'
+                                      }
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Metric chips */}
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-                        📐 {displayArea} kanal
-                      </span>
-                      {totalTrees > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-100">
-                          🌳 {totalTrees} trees
-                        </span>
-                      )}
-                      {totalRows > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-100">
-                          📋 {totalRows} rows
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-                        🪨 {field.soilType}
-                      </span>
                     </div>
 
                     {/* Variety pills */}
                     {varietyTrees.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-3">
+                      <div className="flex flex-wrap gap-1 mb-2">
                         {varietyTrees.slice(0, 3).map((v: any, vi: number) => (
                           <span
                             key={vi}
-                            className="fld-variety-pill inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm"
+                            className="fld-variety-pill inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full text-white shadow-sm"
                             style={{ background: getVarietyColor(v.variety) }}
                           >
                             {v.variety.split(' ')[0]}
@@ -1166,28 +1237,12 @@ const Fields = () => {
                           </span>
                         ))}
                         {varietyTrees.length > 3 && (
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                             +{varietyTrees.length - 3}
                           </span>
                         )}
                       </div>
                     )}
-
-                    {/* Extra info */}
-                    <div className="space-y-1 mb-3">
-                      {field.latitude && field.longitude && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                          {field.latitude.toFixed(4)}, {field.longitude.toFixed(4)}
-                        </div>
-                      )}
-                      {(field as any).pincode && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                          PIN {(field as any).pincode}
-                        </div>
-                      )}
-                    </div>
 
                     {/* Scouted Trees */}
                     {(() => {
@@ -1195,14 +1250,14 @@ const Fields = () => {
                       if (tags.length === 0) return null;
                       const scoutedCount = tags.filter(t => treeHealthSnapshots[t.id]).length;
                       return (
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                              Scouted Trees ({scoutedCount}/{tags.length})
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                              Scouted ({scoutedCount}/{tags.length})
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {tags.slice(0, 8).map((tag) => {
+                          <div className="flex flex-wrap gap-1">
+                            {tags.slice(0, 5).map((tag) => {
                               const snap = treeHealthSnapshots[tag.id];
                               const meta = snap ? getScoutingHealthMeta(snap.healthStatus) : null;
                               return (
@@ -1210,19 +1265,23 @@ const Fields = () => {
                                   key={tag.id}
                                   type="button"
                                   onClick={() => handleOpenScoutingModal(tag as any)}
-                                  className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full border transition-all hover:scale-105 hover:shadow-sm ${meta ? `${meta.badge} ${meta.border}` : 'bg-gray-100 text-gray-500 border-gray-200'}`}
+                                  className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full border transition-all hover:scale-105 ${meta ? `${meta.badge} ${meta.border}` : 'bg-gray-100 text-gray-500 border-gray-200'}`}
                                   title={`${tag.name || 'Tree'} — ${meta ? meta.label : 'Not scouted'}`}
                                 >
-                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta ? meta.dot : '#9ca3af' }} />
+                                  <span className="w-1 h-1 rounded-full shrink-0" style={{ background: meta ? meta.dot : '#9ca3af' }} />
                                   {tag.name || `Tree`}
-                                  {meta && <span className="opacity-70">· {meta.label}</span>}
                                 </button>
                               );
                             })}
-                            {tags.length > 8 && (
-                              <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                                +{tags.length - 8} more
-                              </span>
+                            {tags.length > 5 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate('/tree-scouting')}
+                                className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-all cursor-pointer"
+                                title="View all trees in Tree Scouting"
+                              >
+                                +{tags.length - 5}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1230,25 +1289,25 @@ const Fields = () => {
                     })()}
 
                     {/* Action buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <button
                         onClick={() => handleViewOnMap(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl border-2 border-green-200 text-green-700 hover:bg-green-50 hover:border-green-400 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg border border-green-200 text-green-700 hover:bg-green-50 hover:border-green-400 transition-all"
                       >
                         🗺️ Map
                       </button>
                       <button
                         onClick={() => openWizardForEdit(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl text-white shadow-sm hover:shadow-md hover:scale-105 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg text-white shadow-sm hover:shadow-md transition-all"
                         style={{ background: 'linear-gradient(135deg, #15803d, #16a34a)' }}
                       >
                         ✏️ Edit
                       </button>
                       <button
                         onClick={() => handleDeleteField(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl border-2 border-red-100 text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
                       >
-                        🗑️ Delete
+                        🗑️ Del
                       </button>
                     </div>
                   </div>

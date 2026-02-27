@@ -2727,7 +2727,7 @@ export default function TreeScouting({ fieldId: propFieldId }: TreeScoutingProps
         <div className="flex gap-1 bg-white border border-gray-200 rounded-2xl p-1.5 shadow-sm">
           {([
             { key: 'scout',     label: 'Scout',      icon: Bug          },
-            { key: 'dashboard', label: 'Dashboard',   icon: BarChart2    },
+          
             { key: 'alerts',    label: 'Alerts',      icon: AlertTriangle },
             { key: 'history',   label: 'History',     icon: Clock        },
           ] as const).map(t => (

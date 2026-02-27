@@ -726,7 +726,7 @@ export default function FinancialLedger() {
     if (selectedExpenseCategory === key) {
       setSelectedExpenseCategory(null); setShowAddForm(false);
     } else {
-      setSelectedExpenseCategory(key); setShowAddForm(false);
+      setSelectedExpenseCategory(key); setShowAddForm(true);
       const cfg = EXPENSE_CATEGORY_CONFIG.find(c => c.key === key);
       if (cfg?.dataSource === 'activity' && cfg.activityCodes.length > 0)
         setActCat(cfg.activityCodes[0] as ActivityCategory);
@@ -829,8 +829,15 @@ export default function FinancialLedger() {
             </div>
 
             {selectedCategoryConfig && (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
-                   style={{ animation:'slideDown 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
+              <div
+                className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/65 backdrop-blur-sm p-0 sm:p-4"
+                onClick={() => { setSelectedExpenseCategory(null); setShowAddForm(false); }}
+              >
+              <div
+                className="bg-white w-full sm:max-w-5xl rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[96vh] flex flex-col"
+                style={{ animation:'slideDown 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
+                onClick={e => e.stopPropagation()}
+              >
                 {/* Panel Header */}
                 <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 gap-2" style={{ background:selectedCategoryConfig.gradient }}>
                   <div className="flex items-center gap-3">
@@ -854,9 +861,10 @@ export default function FinancialLedger() {
                   </div>
                 </div>
 
-                {/* Add Form */}
-                {showAddForm && (
-                  <div className="px-3 sm:px-6 py-4 sm:py-5 border-b border-gray-100 bg-gray-50">
+                <div className="overflow-y-auto">
+                  {/* Add Form */}
+                  {showAddForm && (
+                    <div className="px-3 sm:px-6 py-4 sm:py-5 border-b border-gray-100 bg-gray-50">
                     {selectedCategoryConfig.dataSource === 'spray' ? (
                       /* ---- SPRAY FORM ---- */
                       <div className="space-y-4">
@@ -977,11 +985,11 @@ export default function FinancialLedger() {
                         </button>
                       </div>
                     )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* Records */}
-                <div className="px-3 sm:px-6 py-4 sm:py-5">
+                  {/* Records */}
+                  <div className="px-3 sm:px-6 py-4 sm:py-5">
                   {selectedCategoryConfig.dataSource === 'spray' ? (
                     <SprayDetailPanel sprays={db.sprays} openSprayId={openSprayId} setOpenSprayId={setOpenSprayId}
                       onDelete={db.removeSpray} sprayCost={sprayCost} chemicalCost={chemicalCost}
@@ -990,7 +998,9 @@ export default function FinancialLedger() {
                     <ActivityDetailPanel config={selectedCategoryConfig} activities={db.activities}
                       onDelete={db.removeActivity} mutating={db.mutating} />
                   )}
+                  </div>
                 </div>
+              </div>
               </div>
             )}
 
