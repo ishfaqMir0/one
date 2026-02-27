@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Pricing from './pages/Pricing';
 import Dashboard from './pages/Dashboard';
 import Fields from './pages/Fields';
 import Profile from './pages/Profile';
@@ -11,20 +12,26 @@ import SoilTestAdvisory from './pages/SoilTestAdvisory';
 import { useAuth } from './contexts/AuthContext';
 import FinancialLedger from './pages/FinancialLedger';
 import OrchardDoctor from './pages/OrchardDoctor';
-
+import TreeScouting from './pages/TreeScouting';
+import PaymentPage from './pages/PaymentPage';
 const RequireAuth = ({ children }: { children: ReactNode }) => {
   const { session, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600">
-        Loading...
+      <div className="app-loading">
+        <div className="app-loading-inner">
+          <span className="text-3xl select-none" aria-hidden="true">🌿</span>
+          <div className="app-loading-spinner" role="status" aria-label="Loading" />
+          <p className="text-sm font-medium text-gray-500 tracking-wide">Loading your orchard…</p>
+        </div>
       </div>
     );
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />;
+    // Unauthenticated users land on the pricing page first
+    return <Navigate to="/pricing" replace />;
   }
 
   return <>{children}</>;
@@ -34,8 +41,12 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public landing — pricing card shown on first open */}
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+<Route path="/payment" element={<PaymentPage />} />
+        {/* Protected app shell */}
         <Route
           path="/"
           element={
@@ -52,6 +63,7 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="skuast-advisory" element={<SkuastAdvisory />} />
           <Route path="soil-test-advisory" element={<SoilTestAdvisory />} />
+          <Route path="tree-scouting" element={<TreeScouting />} />
         </Route>
       </Routes>
     </Router>

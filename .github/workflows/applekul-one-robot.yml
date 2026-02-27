@@ -1,0 +1,36 @@
+name: The Applekul One Robot (CEO Guard)
+
+# The Robot wakes up on Pull Requests OR when the CEO presses the Audit button
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # <--- THIS IS YOUR MANUAL AUDIT BUTTON
+
+jobs:
+  inspect-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Catch the Code
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Setup Node.js (The Engine)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install Developer Packages
+        run: npm ci
+
+      - name: 🧹 Check for Messy Code (Linting)
+        # This ensures the code follows your professional style guides
+        run: npm run lint
+
+      - name: 🛡️ Strict Type Check
+        # This prevents "Undefined" errors that crash the app for farmers
+        run: npx tsc --noEmit
+
+      - name: 🏗️ Build Test (The Ultimate Crash Test)
+        # This simulates the real app. If this fails, the app is broken.
+        run: npm run build

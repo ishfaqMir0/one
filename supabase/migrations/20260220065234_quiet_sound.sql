@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   address text,
   language text DEFAULT 'en',
   currency text DEFAULT 'INR',
+  role text, -- Doctor or Grower
+  doctor_type text, -- Agronomist if Doctor
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -859,3 +861,20 @@ CREATE POLICY "Users can delete own consultations"
   ON consultations
   FOR DELETE
   USING (auth.uid() = user_id);
+
+ --Set user_id automatically on insert
+ CREATE OR REPLACE FUNCTION set_consultation_user_id()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.user_id := auth.uid();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS set_consultation_user_id_trigger ON consultations;
+
+CREATE TRIGGER set_consultation_user_id_trigger
+BEFORE INSERT ON consultations
+FOR EACH ROW
+EXECUTE FUNCTION set_consultation_user_id();
+
