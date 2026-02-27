@@ -8,8 +8,9 @@
  *  • "Open SKUAST Advisory" button per month — launches SkuastAdvisory modal
  *  • Activity dots on calendar days
  *  • Activity drawer panel on day click
- *  • Responsive, SKUAST-style premium UI (glassmorphism, animated gradients)
+ *  • Responsive, SKUAST-style premium UI (glassmorphism, gradients)
  *  • Persisted to Supabase `calendar_activities` table (RLS-secured per user)
+ *  • No animations - all transitions removed
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -23,111 +24,40 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
 /* ─────────────────────────────────────────────────────────────
-   STYLES
+   STYLES - SKUAST ADVISORY INSPIRED (NO ANIMATIONS)
 ───────────────────────────────────────────────────────────── */
 const CAL_STYLES = `
-@keyframes calFadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes calFadeDown {
-  from { opacity:0; transform:translateY(-18px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes calScaleIn {
-  from { opacity:0; transform:scale(0.90); }
-  to   { opacity:1; transform:scale(1); }
-}
-@keyframes calSlideRight {
-  from { opacity:0; transform:translateX(-20px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes calHeaderGradient {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes calPulseRing {
-  0%   { transform:scale(1);   opacity:0.8; }
-  100% { transform:scale(1.6); opacity:0; }
-}
-@keyframes calLeafSway {
-  0%, 100% { transform: rotate(-4deg); }
-  50%       { transform: rotate(4deg); }
-}
-@keyframes calGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.25); }
-  50%       { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
-}
-@keyframes modalSlideIn {
-  from { opacity:0; transform:translateY(40px) scale(0.95); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
-}
-
-.cal-fade-up    { animation: calFadeUp     0.6s cubic-bezier(.22,1,.36,1) both; }
-.cal-fade-down  { animation: calFadeDown   0.55s cubic-bezier(.22,1,.36,1) both; }
-.cal-scale-in   { animation: calScaleIn    0.5s  cubic-bezier(.22,1,.36,1) both; }
-.cal-slide-r    { animation: calSlideRight 0.5s  cubic-bezier(.22,1,.36,1) both; }
-.cal-glow       { animation: calGlow 2.8s ease-in-out infinite; }
-.cal-leaf       { display:inline-block; animation: calLeafSway 3s ease-in-out infinite; transform-origin: bottom center; }
-.modal-slide-in { animation: modalSlideIn 0.35s cubic-bezier(.22,1,.36,1) both; }
-
-.cal-d0 { animation-delay:0s;   }
-.cal-d1 { animation-delay:.08s; }
-.cal-d2 { animation-delay:.16s; }
-.cal-d3 { animation-delay:.24s; }
-
+/* Professional header banner */
 .cal-header-banner {
-  background: linear-gradient(135deg, #052e16, #064e3b, #047857, #059669, #10b981, #34d399, #10b981, #047857);
-  background-size: 300% 300%;
-  animation: calHeaderGradient 8s ease infinite;
-}
-
-.cal-pulse::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(34,197,94,0.5);
-  animation: calPulseRing 1.6s cubic-bezier(.215,.61,.355,1) infinite;
+  background: linear-gradient(135deg, #064e3b, #065f46, #047857, #059669, #10b981);
 }
 
 .day-cell {
-  transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
   cursor: pointer;
   min-height: 80px;
 }
 .day-cell:hover {
   background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
-  box-shadow: 0 4px 16px rgba(34,197,94,0.12);
-  transform: scale(1.02);
 }
 .day-cell.today {
   background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
-  box-shadow: 0 2px 10px rgba(34,197,94,0.20);
 }
 .day-cell.selected {
   background: linear-gradient(135deg, #a7f3d0, #6ee7b7) !important;
-  box-shadow: 0 4px 20px rgba(16,185,129,0.30);
 }
 .day-cell.other-month {
   opacity: 0.35;
 }
 
-.activity-chip {
-  transition: transform .15s ease, box-shadow .15s ease;
-}
 .activity-chip:hover {
-  transform: translateX(3px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  background: #f9fafb;
 }
 
 .act-type-btn {
-  transition: all .18s ease;
   cursor: pointer;
 }
 .act-type-btn:hover {
-  transform: translateY(-2px) scale(1.04);
+  background: #f9fafb;
 }
 .act-type-btn.selected {
   box-shadow: 0 4px 16px rgba(16,185,129,0.30);
@@ -137,6 +67,13 @@ const CAL_STYLES = `
 .thin-scroll::-webkit-scrollbar { width: 4px; }
 .thin-scroll::-webkit-scrollbar-track { background: transparent; }
 .thin-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+/* Responsive additions */
+@media (max-width: 639px) {
+  .cal-header-banner {
+    border-radius: 1.25rem;
+  }
+}
 `;
 
 /* ─────────────────────────────────────────────────────────────
@@ -163,6 +100,9 @@ interface Activity {
   notes: string;
   completed: boolean;
   linkedModule?: string;
+  treeTagId?: string;
+  rowNumber?: number;
+  treeSerialNumber?: number;
 }
 
 interface ActivityTypeMeta {
@@ -255,13 +195,13 @@ const SkuastAdvisoryModal: React.FC<SkuastModalProps> = ({ monthIdx, onClose }) 
       onClick={onClose}
     >
       <div
-        className="modal-slide-in bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-green-700 to-emerald-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-2xl bg-white/20 flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -271,7 +211,7 @@ const SkuastAdvisoryModal: React.FC<SkuastModalProps> = ({ monthIdx, onClose }) 
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center"
             >
               <X className="w-4 h-4 text-white" />
             </button>
@@ -286,8 +226,7 @@ const SkuastAdvisoryModal: React.FC<SkuastModalProps> = ({ monthIdx, onClose }) 
             {advisories.map((act, i) => (
               <li
                 key={i}
-                className="cal-slide-r flex items-start gap-3 p-3.5 rounded-xl bg-gradient-to-r from-gray-50 to-green-50/30 border border-gray-100 hover:border-green-200 transition-colors"
-                style={{ animationDelay: `${i * 0.06}s` }}
+                className="flex items-start gap-3 p-3.5 rounded-xl bg-gradient-to-r from-gray-50 to-green-50/30 border border-gray-100 hover:border-green-200"
               >
                 <span className="w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 mt-1.5 shrink-0 shadow shadow-green-200" />
                 <span className="text-sm text-gray-700 leading-relaxed">{act}</span>
@@ -308,7 +247,7 @@ const SkuastAdvisoryModal: React.FC<SkuastModalProps> = ({ monthIdx, onClose }) 
         <div className="px-6 pb-5">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold text-sm hover:from-green-700 hover:to-emerald-700 transition-all active:scale-95 shadow-lg shadow-green-200"
+            className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold text-sm hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-200"
           >
             Close Advisory
           </button>
@@ -357,7 +296,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({ initialDate, initial, savin
       onClick={onClose}
     >
       <div
-        className="modal-slide-in bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-green-700 to-emerald-600 px-6 py-5 flex items-center justify-between">
@@ -369,7 +308,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({ initialDate, initial, savin
               {initial ? 'Edit Activity' : 'Add Activity'}
             </h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center">
             <X className="w-4 h-4 text-white" />
           </button>
         </div>
@@ -396,7 +335,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({ initialDate, initial, savin
                   <button
                     key={key}
                     onClick={() => setType(key)}
-                    className={`act-type-btn flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                    className={`act-type-btn flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold ${
                       type === key
                         ? `${meta.color} ${meta.textColor} ${meta.borderColor} selected`
                         : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
@@ -442,9 +381,9 @@ const ActivityForm: React.FC<ActivityFormProps> = ({ initialDate, initial, savin
             </div>
             <button
               onClick={() => setCompleted(!completed)}
-              className={`w-10 h-6 rounded-full transition-all ${completed ? 'bg-green-500' : 'bg-gray-200'}`}
+              className={`w-10 h-6 rounded-full ${completed ? 'bg-green-500' : 'bg-gray-200'}`}
             >
-              <div className={`w-4 h-4 bg-white rounded-full shadow transition-all mx-1 ${completed ? 'translate-x-4' : 'translate-x-0'}`} />
+              <div className={`w-4 h-4 bg-white rounded-full shadow mx-1 ${completed ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
           </div>
         </div>
@@ -452,14 +391,14 @@ const ActivityForm: React.FC<ActivityFormProps> = ({ initialDate, initial, savin
         <div className="px-6 pb-5 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-2xl font-bold text-sm hover:bg-gray-50 transition-all"
+            className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-2xl font-bold text-sm hover:bg-gray-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!title.trim() || saving}
-            className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold text-sm hover:from-green-700 hover:to-emerald-700 transition-all active:scale-95 shadow-lg shadow-green-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold text-sm hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {initial ? 'Save Changes' : 'Add Activity'}
@@ -492,7 +431,7 @@ const DayPanel: React.FC<DayPanelProps> = ({
   const label = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div className="cal-scale-in bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-green-700 to-emerald-600">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
@@ -506,11 +445,11 @@ const DayPanel: React.FC<DayPanelProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onAdd}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 transition-all hover:scale-105 active:scale-95 shadow"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 shadow"
           >
             <Plus className="w-3.5 h-3.5" /> Add
           </button>
-          <button onClick={onClose} className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+          <button onClick={onClose} className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center">
             <X className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
@@ -525,7 +464,7 @@ const DayPanel: React.FC<DayPanelProps> = ({
             <p className="text-sm text-gray-400 mb-3">No activities for this day</p>
             <button
               onClick={onAdd}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-bold shadow hover:from-green-700 hover:to-emerald-700 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-bold shadow hover:from-green-700 hover:to-emerald-700"
             >
               <Plus className="w-3.5 h-3.5" /> Add First Activity
             </button>
@@ -538,17 +477,16 @@ const DayPanel: React.FC<DayPanelProps> = ({
             return (
               <div
                 key={act.id}
-                className={`activity-chip cal-slide-r group rounded-xl border p-3.5 ${
+                className={`activity-chip group rounded-xl border p-3.5 ${
                   act.completed
                     ? 'bg-gray-50 border-gray-200 opacity-70'
                     : `${meta.color} ${meta.borderColor}`
                 }`}
-                style={{ animationDelay: `${i * 0.06}s` }}
               >
                 <div className="flex items-start gap-3">
                   <button
                     onClick={() => onToggleComplete(act.id)}
-                    className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                       act.completed ? 'bg-green-500 border-green-500' : `border-current ${meta.textColor}`
                     }`}
                   >
@@ -559,6 +497,12 @@ const DayPanel: React.FC<DayPanelProps> = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.textColor}`} />
                       <span className={`text-[10px] font-bold uppercase tracking-wide ${meta.textColor}`}>{meta.label}</span>
+                      {act.treeSerialNumber != null && (
+                        <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                          Tree #{act.treeSerialNumber}
+                          {act.rowNumber != null && ` · Row ${act.rowNumber}`}
+                        </span>
+                      )}
                     </div>
                     <p className={`text-sm font-bold mt-0.5 ${act.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                       {act.title}
@@ -578,11 +522,11 @@ const DayPanel: React.FC<DayPanelProps> = ({
                     )}
                   </div>
 
-                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEdit(act)} className={`p-1.5 rounded-lg hover:bg-black/5 transition-colors ${meta.textColor}`}>
+                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100">
+                    <button onClick={() => onEdit(act)} className={`p-1.5 rounded-lg hover:bg-black/5 ${meta.textColor}`}>
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => onDelete(act.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-colors">
+                    <button onClick={() => onDelete(act.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -619,6 +563,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
   const [showForm, setShowForm]               = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [showSkuast, setShowSkuast]           = useState(false);
+  const [filterStatus, setFilterStatus]       = useState<'all' | 'pending' | 'done'>('all');
 
   const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -634,7 +579,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
 
     const { data, error: err } = await supabase
       .from('calendar_activities')
-      .select('id, date, type, title, notes, completed, linked_module')
+      .select('id, date, type, title, notes, completed, linked_module, tree_tag_id, row_number, tree_serial_number')
       .eq('user_id', session.user.id)
       .gte('date', startDate)
       .lte('date', endDate)
@@ -650,6 +595,9 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
       notes: row.notes ?? '',
       completed: row.completed ?? false,
       linkedModule: row.linked_module ?? undefined,
+      treeTagId: row.tree_tag_id ?? undefined,
+      rowNumber: row.row_number ?? undefined,
+      treeSerialNumber: row.tree_serial_number ?? undefined,
     })));
     setLoading(false);
   }, [session?.user, year, month]);
@@ -780,56 +728,75 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
         />
       )}
 
-      <div className="w-full max-w-screen-xl mx-auto space-y-5 pb-14 px-0">
+      <div className="w-full max-w-screen-xl mx-auto space-y-5 sm:space-y-6 lg:space-y-8 pb-14 px-0">
 
         {/* ── Hero header ── */}
-        <div className="cal-fade-down cal-d0 relative overflow-hidden rounded-2xl sm:rounded-3xl cal-header-banner shadow-2xl">
-          <div className="hidden sm:block absolute -top-10 -left-10 w-52 h-52 rounded-full bg-white/5 pointer-events-none" />
-          <div className="hidden sm:block absolute -bottom-12 -right-12 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl cal-header-banner shadow-xl">
+          <div className="hidden sm:block absolute -top-6 -left-6 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
+          <div className="hidden sm:block absolute -bottom-8 -right-8 w-44 h-44 rounded-full bg-white/5 pointer-events-none" />
 
-          <div className="relative px-5 sm:px-8 lg:px-12 py-7 sm:py-10">
-            <div className="cal-scale-in cal-d1 inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 bg-white/15 backdrop-blur-sm border border-white/30 rounded-full text-[11px] sm:text-xs font-bold text-white/90 tracking-widest uppercase mb-4">
-              <span className="relative inline-block w-2 h-2 rounded-full bg-emerald-300 cal-pulse" />
-              Orchard Planner · {year}
+          <div className="relative px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col items-center text-center gap-2 sm:gap-3">
+
+            
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white drop-shadow-xl leading-tight">
+              Calendar
+            </h1>
+
+            <p className="text-[11px] sm:text-sm text-emerald-100/90 font-medium max-w-xs sm:max-w-lg">
+              Plan and track all orchard activities
+            </p>
+
+            <div className="flex flex-wrap gap-1 mt-1 justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending');
+                  setSelectedDate(null);
+                }}
+                className={`flex items-center gap-1 backdrop-blur-sm border rounded-md px-2 py-0.5 transition-all ${
+                  filterStatus === 'pending'
+                    ? 'bg-amber-500/80 border-amber-300'
+                    : 'bg-white/20 border-white/25 hover:bg-white/30'
+                }`}
+              >
+                <Clock className="w-3 h-3 text-amber-300" />
+                <span className="text-white text-[10px] font-bold">{pendingCount} Pending</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilterStatus(filterStatus === 'done' ? 'all' : 'done');
+                  setSelectedDate(null);
+                }}
+                className={`flex items-center gap-1 backdrop-blur-sm border rounded-md px-2 py-0.5 transition-all ${
+                  filterStatus === 'done'
+                    ? 'bg-emerald-500/80 border-emerald-300'
+                    : 'bg-white/20 border-white/25 hover:bg-white/30'
+                }`}
+              >
+                <CheckCircle2 className="w-3 h-3 text-emerald-300" />
+                <span className="text-white text-[10px] font-bold">{completedCount} Done</span>
+              </button>
+              <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm border border-white/25 rounded-md px-2 py-0.5">
+                <CalendarIcon className="w-3 h-3 text-sky-300" />
+                <span className="text-white text-[10px] font-bold">{monthActivities.length} This Month</span>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-end justify-between gap-5">
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-xl leading-tight">
-                  <span className="cal-leaf"></span>{' '}Calendar
-                </h1>
-                <p className="text-white/80 text-sm font-medium mt-1">Plan and track all orchard activities</p>
+            <div className="flex flex-wrap gap-1.5 items-center justify-center mt-2">
+              <button
+                onClick={() => setShowSkuast(true)}
+                className="flex items-center gap-1 px-2 py-1 bg-white text-green-700 rounded-md text-[10px] font-bold shadow hover:bg-green-50"
+              >
+                <BookOpen className="w-3 h-3" /> SKUAST
+              </button>
 
-                <div className="flex flex-wrap gap-3 mt-4">
-                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/25 rounded-xl px-3 py-2">
-                    <Clock className="w-3.5 h-3.5 text-amber-300" />
-                    <span className="text-white text-xs font-bold">{pendingCount} Pending</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/25 rounded-xl px-3 py-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                    <span className="text-white text-xs font-bold">{completedCount} Done</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/25 rounded-xl px-3 py-2">
-                    <CalendarIcon className="w-3.5 h-3.5 text-sky-300" />
-                    <span className="text-white text-xs font-bold">{monthActivities.length} This Month</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 items-center">
-                <button
-                  onClick={() => setShowSkuast(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white text-green-700 rounded-xl text-xs sm:text-sm font-bold shadow hover:bg-green-50 transition-all hover:scale-105 active:scale-95"
-                >
-                  <BookOpen className="w-4 h-4" /> SKUAST Advisory
-                </button>
-                <button
-                  onClick={() => { setShowForm(true); setEditingActivity(undefined); }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white/20 border border-white/30 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-white/30 transition-all hover:scale-105 active:scale-95"
-                >
-                  <Plus className="w-4 h-4" /> Add Activity
-                </button>
-              </div>
+              <button
+                onClick={() => { setShowForm(true); setEditingActivity(undefined); }}
+                className="flex items-center gap-1 px-2 py-1 bg-white/20 border border-white/30 text-white rounded-md text-[10px] font-bold hover:bg-white/30"
+              >
+                <Plus className="w-3 h-3" /> Add
+              </button>
             </div>
           </div>
         </div>
@@ -851,10 +818,10 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
         )}
 
         {/* ── Month navigator ── */}
-        <div className="cal-fade-up cal-d1 bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-5 flex items-center justify-between gap-4">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-5 flex items-center justify-between gap-4">
           <button
             onClick={prevMonth}
-            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-green-50 hover:border-green-300 text-gray-600 hover:text-green-700 transition-all hover:scale-110"
+            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-green-50 hover:border-green-300 text-gray-600 hover:text-green-700"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -866,7 +833,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setShowSkuast(true)}
-            className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow shadow-green-200 hover:scale-105"
+            className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-bold hover:from-green-700 hover:to-emerald-700 shadow shadow-green-200"
           >
             <BookOpen className="w-3.5 h-3.5" />
             {MONTH_NAMES[month].slice(0, 3)} Advisory
@@ -874,7 +841,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
 
           <button
             onClick={nextMonth}
-            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-green-50 hover:border-green-300 text-gray-600 hover:text-green-700 transition-all hover:scale-110"
+            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-green-50 hover:border-green-300 text-gray-600 hover:text-green-700"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -892,7 +859,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {/* ── Calendar grid ── */}
-            <div className="lg:col-span-2 cal-scale-in cal-d2">
+            <div className="lg:col-span-2">
               <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
                 {/* Day headers */}
                 <div className="grid grid-cols-7 bg-gradient-to-r from-green-600 to-emerald-600">
@@ -989,9 +956,129 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
             </div>
 
             {/* ── Right panel ── */}
-            <div className="lg:col-span-1 space-y-4 cal-fade-up cal-d3">
+            <div className="lg:col-span-1 space-y-4">
 
-              {selectedDate ? (
+              {filterStatus !== 'all' ? (
+                (() => {
+                  const filteredActivities = monthActivities
+                    .filter(a => filterStatus === 'pending' ? !a.completed : a.completed)
+                    .sort((a, b) => b.date.localeCompare(a.date));
+
+                  return (
+                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-green-700 to-emerald-600">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                            {filterStatus === 'pending' ? (
+                              <Clock className="w-5 h-5 text-white" />
+                            ) : (
+                              <CheckCircle2 className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest">
+                              {filterStatus === 'pending' ? 'Pending' : 'Completed'} Activities
+                            </p>
+                            <h3 className="text-sm font-extrabold text-white leading-snug">
+                              {MONTH_NAMES[month]} {year}
+                            </h3>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setFilterStatus('all')}
+                          className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                        >
+                          <X className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 space-y-2.5 max-h-[500px] overflow-y-auto thin-scroll">
+                        {filteredActivities.length === 0 ? (
+                          <div className="text-center py-10">
+                            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                              <CalendarIcon className="w-6 h-6 text-gray-300" />
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              No {filterStatus === 'pending' ? 'pending' : 'completed'} activities
+                            </p>
+                          </div>
+                        ) : (
+                          filteredActivities.map((act) => {
+                            const meta = ACTIVITY_TYPES[act.type];
+                            const Icon = meta.icon;
+                            const link = MODULE_LINKS[act.type];
+                            const d = new Date(act.date + 'T00:00:00');
+                            const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                            return (
+                              <div
+                                key={act.id}
+                                className={`activity-chip group rounded-xl border p-3.5 ${
+                                  act.completed
+                                    ? 'bg-gray-50 border-gray-200 opacity-70'
+                                    : `${meta.color} ${meta.borderColor}`
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={() => handleToggleComplete(act.id)}
+                                    className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                      act.completed ? 'bg-green-500 border-green-500' : `border-current ${meta.textColor}`
+                                    }`}
+                                  >
+                                    {act.completed && <div className="w-2 h-2 bg-white rounded-full" />}
+                                  </button>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                      <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.textColor}`} />
+                                      <span className={`text-[10px] font-bold uppercase tracking-wide ${meta.textColor}`}>{meta.label}</span>
+                                      <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                        {dateLabel}
+                                      </span>
+                                    </div>
+                                    <p className={`text-sm font-bold mt-0.5 ${act.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                      {act.title}
+                                    </p>
+                                    {act.notes && (
+                                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{act.notes}</p>
+                                    )}
+
+                                    {link && !act.completed && (
+                                      <button
+                                        onClick={() => handleOpenModule(link.module)}
+                                        className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold ${meta.textColor} hover:underline`}
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                        {link.label}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100">
+                                    <button
+                                      onClick={() => { setEditingActivity(act); setShowForm(true); }}
+                                      className={`p-1.5 rounded-lg hover:bg-black/5 ${meta.textColor}`}
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(act.id)}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : selectedDate ? (
                 <DayPanel
                   date={selectedDate}
                   activities={selectedActivities}
@@ -1014,7 +1101,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
               {/* SKUAST Monthly Advisory Card */}
               <div className="bg-gradient-to-br from-green-700 to-emerald-600 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-2xl bg-white/20 flex items-center justify-center">
                     <BookOpen className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -1027,7 +1114,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
                 </p>
                 <button
                   onClick={() => setShowSkuast(true)}
-                  className="w-full py-2.5 bg-white text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 transition-all hover:scale-105 active:scale-95 shadow flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-white text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 shadow flex items-center justify-center gap-2"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   Open {MONTH_NAMES[month]} Advisory
@@ -1061,8 +1148,7 @@ const Calendar: React.FC<CalendarProps> = ({ onNavigate }) => {
                         return (
                           <div
                             key={act.id}
-                            className={`cal-slide-r flex items-center gap-3 p-2.5 rounded-xl border ${meta.color} ${meta.borderColor} cursor-pointer`}
-                            style={{ animationDelay: `${i * 0.06}s` }}
+                            className={`flex items-center gap-3 p-2.5 rounded-xl border ${meta.color} ${meta.borderColor} cursor-pointer hover:border-green-300`}
                             onClick={() => setSelectedDate(act.date)}
                           >
                             <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.textColor}`} />

@@ -1,79 +1,19 @@
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { kml as kmlToGeoJSON } from '@tmcw/togeojson';
-import { Plus, Search, ListFilter as Filter, X } from 'lucide-react';
+import { Plus, Search, ListFilter as Filter, X, MoreVertical } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import type { Field } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
-/* ─── SkuastAdvisory-style Glass + Animation CSS ─── */
+/* ─── SkuastAdvisory-style Professional Glass CSS (No Animations) ─── */
 const FIELDS_STYLES = `
-@keyframes fldFadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fldFadeDown {
-  from { opacity:0; transform:translateY(-18px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fldScaleIn {
-  from { opacity:0; transform:scale(0.90); }
-  to   { opacity:1; transform:scale(1); }
-}
-@keyframes fldSlideRight {
-  from { opacity:0; transform:translateX(-20px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes fldGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.25); }
-  50%       { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
-}
-@keyframes fldPulseRing {
-  0%   { transform:scale(1);   opacity:0.8; }
-  100% { transform:scale(1.7); opacity:0; }
-}
-@keyframes fldShimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
-}
-@keyframes fldLeafSway {
-  0%, 100% { transform: rotate(-4deg); }
-  50%       { transform: rotate(4deg); }
-}
-@keyframes fldHeaderGradient {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes fldFloat {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
 
-.fld-fade-up   { animation: fldFadeUp     0.6s cubic-bezier(.22,1,.36,1) both; }
-.fld-fade-down { animation: fldFadeDown   0.55s cubic-bezier(.22,1,.36,1) both; }
-.fld-scale-in  { animation: fldScaleIn    0.5s  cubic-bezier(.22,1,.36,1) both; }
-.fld-slide-r   { animation: fldSlideRight 0.5s  cubic-bezier(.22,1,.36,1) both; }
-.fld-glow      { animation: fldGlow 2.8s ease-in-out infinite; }
-.fld-float     { animation: fldFloat 3.5s ease-in-out infinite; }
-
-.fld-d0  { animation-delay:0s;    }
-.fld-d1  { animation-delay:.08s;  }
-.fld-d2  { animation-delay:.16s;  }
-.fld-d3  { animation-delay:.24s;  }
-.fld-d4  { animation-delay:.32s;  }
-.fld-d5  { animation-delay:.40s;  }
-.fld-d6  { animation-delay:.48s;  }
-.fld-d7  { animation-delay:.56s;  }
-
-/* Animated gradient header banner — identical to SkuastAdvisory */
+/* Professional gradient header banner — identical to SkuastAdvisory */
 .fld-header-banner {
-  background: linear-gradient(135deg, #064e3b, #065f46, #047857, #059669, #10b981, #34d399, #6ee7b7, #10b981, #047857);
-  background-size: 300% 300%;
-  animation: fldHeaderGradient 8s ease infinite;
+  background: linear-gradient(135deg, #064e3b, #065f46, #047857, #059669, #10b981);
 }
 
 /* Glass card — signature SkuastAdvisory treatment */
@@ -83,7 +23,7 @@ const FIELDS_STYLES = `
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.6);
   box-shadow: 0 4px 24px rgba(34,197,94,0.07), 0 1px 3px rgba(0,0,0,0.04);
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+
 }
 .fld-glass-card:hover {
   transform: translateY(-5px);
@@ -95,7 +35,7 @@ const FIELDS_STYLES = `
 .fld-field-card {
   background: white;
   border: 1.5px solid #e5e7eb;
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+
   position: relative;
   overflow: hidden;
 }
@@ -106,7 +46,7 @@ const FIELDS_STYLES = `
   height: 3px;
   background: linear-gradient(90deg, #10b981, #059669, #34d399);
   opacity: 0;
-  transition: opacity .22s ease;
+
 }
 .fld-field-card:hover::before { opacity: 1; }
 .fld-field-card:hover {
@@ -116,32 +56,18 @@ const FIELDS_STYLES = `
 }
 
 /* Pulse indicator like SkuastAdvisory */
-.fld-pulse::before {
+. ::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
   background: rgba(34,197,94,0.5);
-  animation: fldPulseRing 1.6s cubic-bezier(.215,.61,.355,1) infinite;
-}
 
-/* Leaf icon sway */
-.fld-leaf {
-  display: inline-block;
-  animation: fldLeafSway 3s ease-in-out infinite;
-  transform-origin: bottom center;
-}
-
-/* Shimmer loader */
-.fld-shimmer {
-  background: linear-gradient(90deg, #f0fdf4 25%, #dcfce7 50%, #f0fdf4 75%);
-  background-size: 400px 100%;
-  animation: fldShimmer 1.4s ease-in-out infinite;
 }
 
 /* Input focus */
 .fld-input {
-  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+
 }
 .fld-input:focus {
   border-color: #16a34a !important;
@@ -152,7 +78,7 @@ const FIELDS_STYLES = `
 
 /* Step button */
 .fld-step-btn {
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+
 }
 .fld-step-btn.active {
   background: linear-gradient(135deg, #15803d, #16a34a);
@@ -162,7 +88,7 @@ const FIELDS_STYLES = `
 
 /* Soil image button */
 .fld-soil-btn {
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+
 }
 .fld-soil-btn:hover {
   transform: translateY(-4px) scale(1.02);
@@ -171,7 +97,7 @@ const FIELDS_STYLES = `
 
 /* Row card */
 .fld-row-card {
-  transition: box-shadow .2s ease, border-color .2s ease;
+
 }
 .fld-row-card:hover {
   box-shadow: 0 4px 18px rgba(34,197,94,0.10);
@@ -180,7 +106,7 @@ const FIELDS_STYLES = `
 
 /* Variety pill */
 .fld-variety-pill {
-  transition: transform .15s ease, box-shadow .15s ease;
+
 }
 .fld-variety-pill:hover {
   transform: translateY(-1px);
@@ -195,7 +121,7 @@ const FIELDS_STYLES = `
 .fld-stat {
   background: white;
   border: 1px solid #f3f4f6;
-  transition: transform .2s ease, box-shadow .2s ease;
+
 }
 .fld-stat:hover {
   transform: translateY(-3px);
@@ -397,7 +323,7 @@ const Fields = () => {
   }, []);
 
   const handleDeleteField = async (field: Field) => {
-    if (!window.confirm(`Are you sure you want to delete "${field.name}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete"${field.name}"?`)) return;
     const { error } = await supabase.from('fields').delete().eq('id', field.id);
     if (!error) setFields((prev) => prev.filter((f) => f.id !== field.id));
     else alert('Failed to delete field.');
@@ -423,6 +349,7 @@ const Fields = () => {
   const [selectedTreeId, setSelectedTreeId]   = useState<string | null>(null);
   const [tagFormData, setTagFormData]         = useState({ name: '', variety: '', rowNumber: '' });
   const [editingTreeId, setEditingTreeId]     = useState<string | null>(null);
+  const [openDetailsMenuId, setOpenDetailsMenuId] = useState<string | null>(null);
 
   // All tree_tags from Supabase (keyed by field_id → list of tags)
   const [fieldTreeTags, setFieldTreeTags] = useState<Record<string, Array<{
@@ -1056,42 +983,38 @@ const Fields = () => {
       <div className="space-y-7 pb-12">
 
         {/* ══════════ HERO HEADER (SkuastAdvisory-style) ══════════ */}
-        <div className="fld-fade-down fld-d0 relative overflow-hidden rounded-3xl fld-header-banner shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl fld-header-banner shadow-2xl">
           <div className="absolute -top-10 -left-10 w-52 h-52 rounded-full bg-white/5 pointer-events-none" />
           <div className="absolute -bottom-12 -right-12 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
           <div className="absolute top-6 right-24 w-20 h-20 rounded-full bg-white/8 pointer-events-none" />
           <div className="absolute bottom-4 left-24 w-14 h-14 rounded-full bg-white/6 pointer-events-none" />
 
           <div className="relative px-8 py-10 flex flex-col items-center text-center gap-4">
-            {/* Live badge */}
-            <div className="fld-scale-in fld-d1 inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm border border-white/30 rounded-full text-xs font-bold text-white/90 tracking-widest uppercase">
-              <span className="relative inline-block w-2 h-2 rounded-full bg-emerald-300 fld-pulse" />
-              Field Management · Live
-            </div>
+          
 
             {/* Title */}
-            <h1 className="fld-fade-up fld-d2 text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-xl leading-tight">
-              <span className="fld-leaf"></span>{' '}Orchards
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-xl leading-tight">
+              <span className=""></span>{' '}Orchards
             </h1>
 
             {/* Subtitle */}
-            <p className="fld-fade-up fld-d3 text-base sm:text-lg text-emerald-100/90 font-medium max-w-md">
+            <p className="text-base sm:text-lg text-emerald-100/90 font-medium max-w-md">
               Manage and view all your orchard fields with ease
             </p>
 
             {/* CTA */}
             <button
               onClick={openWizard}
-              className="fld-scale-in fld-d4 group flex items-center gap-2 px-7 py-3.5 bg-white text-green-700 font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200"
+              className="group flex items-center gap-2 px-7 py-3.5 bg-white text-green-700 font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200"
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
-              Create Field
+              
             </button>
           </div>
         </div>
 
         {/* ══════════ SEARCH BAR ══════════ */}
-        <div className="fld-fade-up fld-d1">
+        <div className="">
           <div className="fld-glass-card rounded-2xl p-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="fld-search-wrap flex-1 relative">
@@ -1118,29 +1041,34 @@ const Fields = () => {
 
         {/* ══════════ STAT STRIP ══════════ */}
         {fields.length > 0 && (
-          <div className="fld-fade-up fld-d2 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Total Fields',   value: fields.length,                         icon: '🗺️',  color: 'from-emerald-500 to-green-600' },
-              { label: 'Total Trees',    value: totalFieldTrees || '—',                icon: '🌳',  color: 'from-green-500 to-teal-500' },
-              { label: 'Total Area',     value: `${Number(totalFieldsArea).toFixed(1)} kanal`, icon: '📐', color: 'from-teal-500 to-cyan-500' },
-              { label: 'Filtered',       value: filteredFields.length,                 icon: '🔍',  color: 'from-sky-500 to-indigo-500' },
-            ].map((s, i) => (
-              <div key={i} className="fld-stat rounded-2xl p-4 shadow-sm flex items-center gap-3" style={{ animationDelay: `${i * 0.06}s` }}>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-lg font-extrabold text-gray-900 leading-none">{s.value}</p>
-                  <p className="text-xs font-semibold text-gray-400 mt-0.5">{s.label}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-center">
+            <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
+              {[
+                { label: 'Total Fields',   value: fields.length,                         icon: '🗺️',  color: 'from-emerald-500 to-green-600', onClick: () => navigate('/dashboard') },
+                { label: 'Total Trees',    value: totalFieldTrees || '—',                icon: '🌳',  color: 'from-green-500 to-teal-500', onClick: () => navigate('/dashboard') },
+              ].map((s, i) => (
+                <button
+                  key={i}
+                  onClick={s.onClick}
+                  className="fld-stat rounded-2xl p-5 shadow-sm flex items-center gap-4 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
+                  style={{ animationDelay: `${i * 0.06}s` }}
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl shadow-sm shrink-0`}>
+                    {s.icon}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-2xl font-extrabold text-gray-900 leading-none">{s.value}</p>
+                    <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wide">{s.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {/* ══════════ ERROR ══════════ */}
         {fieldsError && (
-          <div className="fld-slide-r px-4 py-3 rounded-2xl border border-red-200 bg-red-50/80 text-sm text-red-700 flex items-center gap-2">
+          <div className="px-4 py-3 rounded-2xl border border-red-200 bg-red-50/80 text-sm text-red-700 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
             {fieldsError}
           </div>
@@ -1152,8 +1080,8 @@ const Fields = () => {
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-green-600 animate-spin" />
               <div className="space-y-2">
-                <div className="fld-shimmer h-3 w-32 rounded-full mx-auto" />
-                <div className="fld-shimmer h-2 w-20 rounded-full mx-auto" />
+                <div className="h-3 w-32 rounded-full mx-auto" />
+                <div className="h-2 w-20 rounded-full mx-auto" />
               </div>
               <p className="text-sm text-gray-400 font-medium">Loading your orchards…</p>
             </div>
@@ -1181,62 +1109,127 @@ const Fields = () => {
               return (
                 <div
                   key={field.id}
-                  className="fld-field-card fld-fade-up rounded-2xl"
+                  className="fld-field-card rounded-2xl"
                   style={{ animationDelay: `${fi * 0.06}s` }}
                 >
                   {/* Card top accent line by health */}
                   <div className="h-1 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${getHealthDotColor(field.healthStatus)}, ${getHealthDotColor(field.healthStatus)}88)` }} />
 
-                  <div className="p-5">
+                  <div className="p-3">
                     {/* Header row */}
-                    <div className="flex items-start justify-between mb-3 gap-2">
+                    <div className="flex items-start justify-between mb-2 gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-extrabold text-gray-900 truncate">{field.name}</h3>
+                        <h3 className="text-sm font-extrabold text-gray-900 truncate">{field.name}</h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                          <span className="text-xs text-gray-400 truncate">{field.location}</span>
+                          <span className="text-[10px] text-gray-400 truncate">{field.location}</span>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${getHealthStatusBadge(field.healthStatus)}`}>
-                          <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ background: getHealthDotColor(field.healthStatus) }} />
-                          {field.healthStatus}
-                        </span>
-                        {orchardType && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
-                            {orchardType}
+                      <div className="flex items-start gap-1.5 shrink-0">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${getHealthStatusBadge(field.healthStatus)}`}>
+                            <span className="inline-block w-1 h-1 rounded-full mr-1 align-middle" style={{ background: getHealthDotColor(field.healthStatus) }} />
+                            {field.healthStatus}
                           </span>
-                        )}
+                          {orchardType && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
+                              {orchardType}
+                            </span>
+                          )}
+                        </div>
+                        {/* Three-dot menu */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDetailsMenuId(openDetailsMenuId === field.id ? null : field.id)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Field Details"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                          </button>
+                          {openDetailsMenuId === field.id && (
+                            <>
+                              {/* Backdrop to close menu */}
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setOpenDetailsMenuId(null)}
+                              />
+                              {/* Dropdown menu */}
+                              <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-20">
+                                <h4 className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-2 pb-2 border-b border-emerald-100">Field Details</h4>
+                                <div className="space-y-1.5">
+                                  {field.latitude && field.longitude && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Location:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                        {field.latitude.toFixed(6)}, {field.longitude.toFixed(6)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {(field as any).pincode && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">PIN:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{(field as any).pincode}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Soil:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">{field.soilType}</span>
+                                  </div>
+                                  {displayArea && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Area:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{displayArea} kanal</span>
+                                    </div>
+                                  )}
+                                  {totalRows > 0 && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Rows:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{totalRows} rows</span>
+                                    </div>
+                                  )}
+                                  {totalTrees > 0 && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Trees:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{totalTrees} trees</span>
+                                    </div>
+                                  )}
+                                  {orchardType && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Type:</span>
+                                      <span className="text-[10px] text-gray-700 font-medium flex-1">{orchardType}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Good For:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                      {details.goodFor || 'Commercial Farming'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold text-gray-500 w-16 shrink-0">Density:</span>
+                                    <span className="text-[10px] text-gray-700 font-medium flex-1">
+                                      {totalTrees && displayArea ?
+                                        `${(totalTrees / Number(displayArea)).toFixed(1)} trees/kanal` :
+                                        details.plantDensity || 'High Density'
+                                      }
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Metric chips */}
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-                        📐 {displayArea} kanal
-                      </span>
-                      {totalTrees > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-100">
-                          🌳 {totalTrees} trees
-                        </span>
-                      )}
-                      {totalRows > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-100">
-                          📋 {totalRows} rows
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-                        🪨 {field.soilType}
-                      </span>
                     </div>
 
                     {/* Variety pills */}
                     {varietyTrees.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-3">
+                      <div className="flex flex-wrap gap-1 mb-2">
                         {varietyTrees.slice(0, 3).map((v: any, vi: number) => (
                           <span
                             key={vi}
-                            className="fld-variety-pill inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm"
+                            className="fld-variety-pill inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full text-white shadow-sm"
                             style={{ background: getVarietyColor(v.variety) }}
                           >
                             {v.variety.split(' ')[0]}
@@ -1244,28 +1237,12 @@ const Fields = () => {
                           </span>
                         ))}
                         {varietyTrees.length > 3 && (
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                             +{varietyTrees.length - 3}
                           </span>
                         )}
                       </div>
                     )}
-
-                    {/* Extra info */}
-                    <div className="space-y-1 mb-3">
-                      {field.latitude && field.longitude && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                          {field.latitude.toFixed(4)}, {field.longitude.toFixed(4)}
-                        </div>
-                      )}
-                      {(field as any).pincode && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                          PIN {(field as any).pincode}
-                        </div>
-                      )}
-                    </div>
 
                     {/* Scouted Trees */}
                     {(() => {
@@ -1273,14 +1250,14 @@ const Fields = () => {
                       if (tags.length === 0) return null;
                       const scoutedCount = tags.filter(t => treeHealthSnapshots[t.id]).length;
                       return (
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                              Scouted Trees ({scoutedCount}/{tags.length})
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                              Scouted ({scoutedCount}/{tags.length})
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {tags.slice(0, 8).map((tag) => {
+                          <div className="flex flex-wrap gap-1">
+                            {tags.slice(0, 5).map((tag) => {
                               const snap = treeHealthSnapshots[tag.id];
                               const meta = snap ? getScoutingHealthMeta(snap.healthStatus) : null;
                               return (
@@ -1288,19 +1265,23 @@ const Fields = () => {
                                   key={tag.id}
                                   type="button"
                                   onClick={() => handleOpenScoutingModal(tag as any)}
-                                  className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full border transition-all hover:scale-105 hover:shadow-sm ${meta ? `${meta.badge} ${meta.border}` : 'bg-gray-100 text-gray-500 border-gray-200'}`}
+                                  className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full border transition-all hover:scale-105 ${meta ? `${meta.badge} ${meta.border}` : 'bg-gray-100 text-gray-500 border-gray-200'}`}
                                   title={`${tag.name || 'Tree'} — ${meta ? meta.label : 'Not scouted'}`}
                                 >
-                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta ? meta.dot : '#9ca3af' }} />
+                                  <span className="w-1 h-1 rounded-full shrink-0" style={{ background: meta ? meta.dot : '#9ca3af' }} />
                                   {tag.name || `Tree`}
-                                  {meta && <span className="opacity-70">· {meta.label}</span>}
                                 </button>
                               );
                             })}
-                            {tags.length > 8 && (
-                              <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                                +{tags.length - 8} more
-                              </span>
+                            {tags.length > 5 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate('/tree-scouting')}
+                                className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-all cursor-pointer"
+                                title="View all trees in Tree Scouting"
+                              >
+                                +{tags.length - 5}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1308,25 +1289,25 @@ const Fields = () => {
                     })()}
 
                     {/* Action buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <button
                         onClick={() => handleViewOnMap(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl border-2 border-green-200 text-green-700 hover:bg-green-50 hover:border-green-400 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg border border-green-200 text-green-700 hover:bg-green-50 hover:border-green-400 transition-all"
                       >
                         🗺️ Map
                       </button>
                       <button
                         onClick={() => openWizardForEdit(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl text-white shadow-sm hover:shadow-md hover:scale-105 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg text-white shadow-sm hover:shadow-md transition-all"
                         style={{ background: 'linear-gradient(135deg, #15803d, #16a34a)' }}
                       >
                         ✏️ Edit
                       </button>
                       <button
                         onClick={() => handleDeleteField(field)}
-                        className="flex-1 py-2 text-xs font-bold rounded-xl border-2 border-red-100 text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
+                        className="flex-1 py-1.5 text-[10px] font-bold rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
                       >
-                        🗑️ Delete
+                        🗑️ Del
                       </button>
                     </div>
                   </div>
@@ -1338,14 +1319,10 @@ const Fields = () => {
 
         {/* ══════════ EMPTY STATE ══════════ */}
         {!fieldsLoading && filteredFields.length === 0 && (
-          <div className="fld-scale-in fld-glass-card rounded-3xl p-14 text-center border-2 border-dashed border-green-200">
+          <div className="fld-glass-card rounded-3xl p-14 text-center border-2 border-dashed border-green-200">
             <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center shadow-inner fld-float">
-                <span className="text-5xl"></span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                <Plus className="w-4 h-4 text-white" />
-              </div>
+             
+              
             </div>
             <h3 className="text-xl font-extrabold text-gray-900 mb-2">
               {searchTerm ? 'No matching orchards' : 'No orchards yet'}
@@ -1360,7 +1337,7 @@ const Fields = () => {
                 style={{ background: 'linear-gradient(135deg, #15803d, #16a34a)' }}
               >
                 <Plus className="w-5 h-5" />
-                Create Your First Orchard
+                
               </button>
             )}
           </div>
@@ -1370,12 +1347,12 @@ const Fields = () => {
         {wizardOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={resetWizard} />
-            <div className="fld-scale-in relative bg-white w-full max-w-5xl mx-4 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="relative bg-white w-full max-w-5xl mx-4 rounded-3xl shadow-2xl overflow-hidden">
 
               {/* Modal Header */}
               <div className="flex items-center justify-between px-6 py-5 fld-header-banner">
                 <div className="flex items-center gap-3">
-                  <div className="fld-glow w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg">
                     <span className="text-xl">🌳</span>
                   </div>
                   <div>
@@ -1423,7 +1400,7 @@ const Fields = () => {
 
                 {/* ── Step 1: Orchard Details ── */}
                 {wizardStep === 1 && (
-                  <div className="space-y-6 fld-fade-up">
+                  <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1 h-6 rounded-full bg-gradient-to-b from-green-500 to-emerald-600" />
                       <h3 className="text-base font-extrabold text-gray-900">Basic Orchard Information</h3>
@@ -1552,7 +1529,7 @@ const Fields = () => {
 
                 {/* ── Step 2: Soil Type ── */}
                 {wizardStep === 2 && (
-                  <div className="space-y-6 fld-fade-up">
+                  <div className="space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <div className="w-1 h-6 rounded-full bg-gradient-to-b from-amber-500 to-orange-500" />
@@ -1605,7 +1582,7 @@ const Fields = () => {
 
                 {/* ── Step 3: Location ── */}
                 {wizardStep === 3 && (
-                  <div className="space-y-5 fld-fade-up">
+                  <div className="space-y-5">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1 h-6 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500" />
                       <h3 className="text-base font-extrabold text-gray-900">Location Details</h3>
@@ -1869,7 +1846,7 @@ const Fields = () => {
         {soilGuideOpen && (
           <div className="fixed inset-0 z-60 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSoilGuideOpen(false)} />
-            <div className="fld-scale-in relative bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-6">
+            <div className="relative bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
@@ -1905,7 +1882,7 @@ const Fields = () => {
         {scoutingModal && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setScoutingModal(null)} />
-            <div className="fld-scale-in relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden" style={{ maxHeight: '90vh' }}>
+            <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden" style={{ maxHeight: '90vh' }}>
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 fld-header-banner">
                 <div className="flex items-center gap-3">
@@ -2041,10 +2018,10 @@ const Fields = () => {
         {tagFormOpen && pendingTagLocation && (
           <div className="fixed inset-0 z-70 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setTagFormOpen(false)} />
-            <div className="fld-scale-in relative bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-6">
+            <div className="relative bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="fld-glow w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
                     <span className="text-xl">🌲</span>
                   </div>
                   <h3 className="text-lg font-extrabold text-gray-900">Tag Tree</h3>
