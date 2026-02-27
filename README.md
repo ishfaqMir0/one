@@ -1,4 +1,4 @@
-# AplekUL Orchard Management Platform
+# ApplekuL Orchard Management Platform
 
 ApplekuL is a modern web application for orchard management, built with React, TypeScript, and Vite. It integrates with Supabase for backend services and provides tools for field management, financial ledgers, advisory modules, and more.
 
