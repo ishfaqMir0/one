@@ -1,5 +1,6 @@
 /**
  * Login.tsx  — Dual Authentication: Email/Password OR Phone/OTP (SKUAST-style Premium UI)
+ * FIXED: Mobile navigation issue resolved
  */
 
 import React, { useEffect, useState } from 'react';
@@ -180,19 +181,28 @@ const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { session, userRole } = useAuth();
+  const { session, userRole, loading: authLoading } = useAuth();
 
   // Phone validation state
   const [phoneValidation, setPhoneValidation] = useState<{ valid: boolean; message: string; formatted: string } | null>(null);
 
+  // FIXED: Only redirect if we have both session AND role, and auth is not loading
+  // This prevents the stuck state on mobile
   useEffect(() => {
-    if (!session) return;
-    if (userRole === 'Doctor') {
-      navigate('/orchard-doctor', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [navigate, session, userRole]);
+    if (authLoading) return; // Wait for auth to finish loading
+    if (!session) return; // No session, stay on login
+
+    // Give a small delay for mobile browsers to settle
+    const timeoutId = setTimeout(() => {
+      if (userRole === 'Doctor') {
+        navigate('/orchard-doctor', { replace: true });
+      } else if (userRole) {
+        navigate('/dashboard', { replace: true });
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [session, userRole, authLoading, navigate]);
 
   // Email/Password Login
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -223,6 +233,7 @@ const Login: React.FC = () => {
       }
 
       setLoading(false);
+      // Navigate after state is set
       if (role === 'Doctor') {
         navigate('/orchard-doctor', { replace: true });
       } else {
@@ -315,6 +326,7 @@ const Login: React.FC = () => {
       }
 
       setLoading(false);
+      // Navigate after state is set
       if (role === 'Doctor') {
         navigate('/orchard-doctor', { replace: true });
       } else {
@@ -339,6 +351,11 @@ const Login: React.FC = () => {
       setPhoneValidation(null);
     }
   };
+
+  // Show nothing while auth is loading to prevent flicker
+  if (authLoading) {
+    return null;
+  }
 
   return (
     <>

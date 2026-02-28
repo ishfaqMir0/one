@@ -2,14 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/pwa-192.png" />
+
+    <!-- Apple Touch Icons - FIXED: Added multiple sizes -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/pwa-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/pwa-512.png" />
+
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Theme Colors -->
     <meta name="theme-color" content="#0f766e" />
+    <meta name="msapplication-TileColor" content="#0f766e" />
+
+    <!-- Mobile Web App Capable -->
     <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Apple Mobile Web App - FIXED: Changed to black-translucent for better status bar -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AppleKul One" />
+
+    <!-- Viewport - FIXED: Added user-scalable and maximum-scale for better accessibility -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="AppleKul One - Professional apple orchard management platform for farmers" />
+    <meta name="keywords" content="apple orchard, farm management, agriculture, AppleKul" />
+    <meta name="author" content="AppleKul" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AppleKul One - Orchard Management" />
+    <meta property="og:description" content="Professional apple orchard management platform" />
+    <meta property="og:image" content="/pwa-512.png" />
+
+    <!-- Title -->
     <title>AppleKul One</title>
   </head>
   <body>
