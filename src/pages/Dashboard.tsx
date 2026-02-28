@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, TreePine, TriangleAlert as AlertTriangle, Cloud, TrendingUp, Calendar, UserCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';

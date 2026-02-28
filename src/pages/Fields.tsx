@@ -533,7 +533,7 @@ const Fields = () => {
       return;
     }
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=drawing,geometry`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=drawing,geometry,marker&loading=async`;
     script.async = true; script.defer = true; script.dataset.googleMaps = 'true';
     script.onload = () => setMapsLoaded(true);
     script.onerror = () => setMapsError('Failed to load Google Maps.');

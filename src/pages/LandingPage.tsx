@@ -9,7 +9,7 @@
  *  - "Buy now" → /payment (plan + billing in state)
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 /* ─────────────────────────────────────────────────────────────
@@ -64,6 +64,7 @@ const LANDING_STYLES = `
 .lp-root {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Navbar ── */
@@ -93,6 +94,7 @@ const LANDING_STYLES = `
   border-radius: 10px;}
 .lp-nav-brand { font-size:1.05rem; font-weight:800; color:#064e3b; letter-spacing:-.3px; }
 .lp-nav-brand span { color:#10b981; }
+.lp-nav-actions { display:flex; align-items:center; gap:.55rem; }
 .lp-btn-solid {
   padding: .45rem 1.3rem;
   border-radius: 999px;
@@ -105,13 +107,14 @@ const LANDING_STYLES = `
   box-shadow: 0 4px 14px rgba(16,185,129,.35);
   transition: transform .18s, box-shadow .18s;
   font-family: inherit;
+  min-height: 40px;
 }
 .lp-btn-solid:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(16,185,129,.45); }
 
 /* ── Hero ── */
 .lp-hero {
   position: relative;
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -278,13 +281,20 @@ const LANDING_STYLES = `
 .lp-tab-bar {
   display:flex; justify-content:center; gap:0;
   border-bottom:2px solid #e5e7eb; margin-bottom:2.5rem;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  scroll-snap-type:x proximity;
 }
+.lp-tab-bar::-webkit-scrollbar { display:none; }
 .lp-tab {
   padding:.75rem 1.7rem; font-size:.9rem; font-weight:600; color:#6b7280;
   background:none; border:none; border-bottom:3px solid transparent;
   margin-bottom:-2px; cursor:pointer;
   transition:color .18s,border-color .18s; white-space:nowrap;
   font-family:inherit;
+  flex:0 0 auto;
+  scroll-snap-align:start;
 }
 .lp-tab.active { color:#059669; border-bottom-color:#059669; font-weight:700; }
 .lp-tab:hover:not(.active) { color:#374151; }
@@ -414,6 +424,15 @@ const LANDING_STYLES = `
 }
 .lp-btn-contact:hover { background:#7c3aed; color:#fff; }
 
+.lp-btn-solid,
+.lp-hero-cta-primary,
+.lp-btn-trial,
+.lp-btn-buy,
+.lp-btn-contact,
+.lp-tab {
+  touch-action: manipulation;
+}
+
 /* Shimmer bar */
 .lp-shimmer-bar {
   height:4px;
@@ -435,18 +454,60 @@ const LANDING_STYLES = `
   display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
 }
 
+@media (max-width:900px) {
+  .lp-nav { padding:.72rem 1rem; }
+  .lp-nav-logo img { height:64px; }
+  .lp-nav-brand { font-size:.93rem; }
+  .lp-nav-actions { gap:.42rem; }
+  .lp-btn-solid { padding:.45rem .95rem; font-size:.78rem; }
+  .lp-hero { padding-top:86px; }
+  .lp-plans { scroll-margin-top:92px; }
+}
+
 /* Responsive */
 @media (max-width:640px) {
-  .lp-nav { padding:.72rem 1rem; }
+  .lp-nav { padding:.6rem .75rem; gap:.5rem; }
+  .lp-nav-logo { gap:.42rem; min-width:0; }
+  .lp-nav-logo img { height:50px; }
+  .lp-nav-brand { font-size:.82rem; letter-spacing:-.2px; }
+  .lp-nav-actions { gap:.35rem; }
+  .lp-btn-solid { min-height:36px; padding:.4rem .78rem; font-size:.72rem; }
+  .lp-hero { min-height:auto; padding-top:82px; padding-bottom:1.25rem; }
+  .lp-hero-title { font-size:clamp(1.95rem,8vw,2.45rem); line-height:1.14; }
+  .lp-hero-punchline { font-size:clamp(.98rem,4.3vw,1.2rem); }
+  .lp-hero-sub { font-size:.84rem; margin:.45rem 0 1.4rem; }
   .lp-hero-content { padding:1.5rem 1rem 3rem; }
+  .lp-hero-cta-primary { width:100%; justify-content:center; min-height:46px; }
+  .lp-blob { filter:blur(58px); opacity:.58; animation-duration:20s; }
+  .lp-scroll-hint { display:none; }
+  .lp-plans { padding:4rem 1rem 5rem; scroll-margin-top:84px; }
+  .lp-plans-head { margin-bottom:2rem; }
+  .lp-plans-head p { font-size:.9rem; }
+  .lp-tab-bar { justify-content:flex-start; margin-inline:-.2rem; padding-inline:.2rem; }
+  .lp-tab-desc { padding:.7rem .85rem; text-align:left; }
+  .lp-plans-grid { grid-template-columns:1fr; gap:1rem; }
   .lp-stats-bar { flex-direction:column; border-radius:16px; }
   .lp-stat { border-right:none; border-bottom:1px solid rgba(255,255,255,.1); }
   .lp-stat:last-child { border-bottom:none; }
   .lp-tab { padding:.6rem .9rem; font-size:.78rem; }
   .lp-billing-pill { flex-direction:column; gap:.6rem; border-radius:14px; }
+  .lp-card-body { padding:1.25rem 1rem 1rem; }
+  .lp-card-footer { padding:.8rem 1rem 1rem; }
   .lp-card-footer { flex-direction:column; align-items:flex-start; }
   .lp-card-actions { width:100%; }
-  .lp-btn-trial,.lp-btn-buy { flex:1; text-align:center; }
+  .lp-btn-trial,.lp-btn-buy,.lp-btn-contact { flex:1; text-align:center; min-height:42px; }
+  .lp-shimmer-bar { animation:none; }
+  .lp-trust { padding:2.2rem 1rem; }
+  .lp-trust-inner { gap:1rem; justify-content:flex-start; }
+  .lp-trust-item { width:100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-root *, .lp-root *::before, .lp-root *::after {
+    animation:none !important;
+    transition:none !important;
+    scroll-behavior:auto !important;
+  }
 }
 `;
 
@@ -473,6 +534,11 @@ interface Plan {
   btnColor?: 'green' | 'blue' | 'purple';
   features: string[];
   contactSales?: boolean;
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -737,10 +803,47 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [billing] = useState<'annual'>('annual');
   const [activeTab, setActiveTab] = useState<'individuals' | 'business' | 'cooperative'>('individuals');
-  
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    const installed = window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
+    setIsInstalled(installed);
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+      setCanInstall(true);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setCanInstall(false);
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
 
   const scrollToPlans = () => {
     document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+    setCanInstall(false);
   };
 
   const currentTab = TAB_PLANS[activeTab];
@@ -792,9 +895,16 @@ const LandingPage: React.FC = () => {
 </a>
 
 
-  <button className="lp-btn-solid" onClick={scrollToPlans}>
-    See Plans
-  </button>
+  <div className="lp-nav-actions">
+    {canInstall && !isInstalled && (
+      <button className="lp-btn-solid" onClick={handleInstallApp}>
+        Install App
+      </button>
+    )}
+    <button className="lp-btn-solid" onClick={scrollToPlans}>
+      See Plans
+    </button>
+  </div>
 </nav>
 
       {/* ══ HERO ══ */}
