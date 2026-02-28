@@ -288,7 +288,7 @@ function OrchardMapModal({
       return;
     }
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,marker&loading=async`;
     s.async = true; s.defer = true; s.dataset.googleMaps = 'true';
     s.onload = () => setMapsReady(true);
     s.onerror = () => setMapError('Failed to load Google Maps.');

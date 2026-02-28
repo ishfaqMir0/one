@@ -1,22 +1,22 @@
-import type { ReactNode } from 'react';
+import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import Fields from './pages/Fields';
-import Profile from './pages/Profile';
-import SkuastAdvisory from './pages/SkuastAdvisory';
-import SoilTestAdvisory from './pages/SoilTestAdvisory';
 import { useAuth } from './contexts/AuthContext';
-import FinancialLedger from './pages/FinancialLedger';
-import OrchardDoctor from './pages/OrchardDoctor';
-import TreeScouting from './pages/TreeScouting';
-import Calendar from './pages/Calendar';
-import TeamManagement from './pages/TeamManagement';
-import AcceptInvitation from './pages/AcceptInvitation';
-import Pricing from './pages/Pricing';  
-import PaymentPage from './pages/PaymentPage';
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Fields = lazy(() => import('./pages/Fields'));
+const Profile = lazy(() => import('./pages/Profile'));
+const SkuastAdvisory = lazy(() => import('./pages/SkuastAdvisory'));
+const SoilTestAdvisory = lazy(() => import('./pages/SoilTestAdvisory'));
+const FinancialLedger = lazy(() => import('./pages/FinancialLedger'));
+const OrchardDoctor = lazy(() => import('./pages/OrchardDoctor'));
+const TreeScouting = lazy(() => import('./pages/TreeScouting'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const TeamManagement = lazy(() => import('./pages/TeamManagement'));
+const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
@@ -243,9 +243,16 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+const RouteLoader = () => (
+  <div className="min-h-[40vh] grid place-items-center px-4 text-sm text-gray-600">
+    Loading page...
+  </div>
+);
+
 function App() {
   return (
     <Router>
+      <Suspense fallback={<RouteLoader />}>
       <Routes>
         {/* Public landing — pricing card shown on first open */}
         <Route path="/pricing" element={<Pricing />} />
@@ -276,6 +283,7 @@ function App() {
 
         </Route>
       </Routes>
+      </Suspense>
     </Router>
   );
 }

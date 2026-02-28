@@ -12,9 +12,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Plus, Droplets, ChevronDown, ChevronUp, Trash2, Users,
-  TrendingUp, TrendingDown, DollarSign, Leaf, Wrench,
+  TrendingUp, TrendingDown,
   ShoppingBag, BarChart2, CheckCircle2, Scissors, Shovel,
-  Sprout, Package, Truck, Settings, X, ArrowRight, Activity,
+   Package, Settings, X, Activity,
   FlaskConical, Calendar, Hash, Loader2, AlertTriangle,
   Camera, Image, Pencil, Save, XCircle,
 } from 'lucide-react';

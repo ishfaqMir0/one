@@ -9,7 +9,6 @@ import {
   IndianRupee,
   Stethoscope,
   FlaskConical,
-  Search,
   Satellite,
   CalendarIcon,
   TreePine,
@@ -254,8 +253,3 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
-{/* { path: '/fields',             icon: MapPin,           label: 'Fields' },
-  { path: '/finance',            icon: IndianRupee,      label: 'Finance' },
-  { path: '/orchard-doctor',     icon: Stethoscope,      label: 'Orchard Doctor' },
-  { path: '/skuast-advisory',    icon: BookOpen,         label: 'SKUAST Advisory' },
-  { path: '/soil-test-advisory', icon: FlaskConical,     label: 'Lab-Test' }, */}
